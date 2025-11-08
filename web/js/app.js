@@ -3,9 +3,11 @@ let foodData = [];
 let mealItems = [];
 let currentSearchResults = [];
 let isDataLoaded = false;
+let toastTimeout = null;
 
 // ---------- Bootstrap ----------
 window.addEventListener('DOMContentLoaded', async () => {
+  createToastContainer();
   bindNav();
   bindActions();
   showLoading(true);
@@ -37,6 +39,31 @@ function updateMealCount() {
   if (el) el.textContent = mealItems.length;
 }
 
+function createToastContainer() {
+  let toast = document.getElementById('toast-notification');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast-notification';
+    toast.className = 'toast-notification';
+    document.body.appendChild(toast);
+  }
+}
+
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast-notification');
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.className = 'toast-notification';
+  toast.classList.add(type);
+  toast.classList.add('show');
+
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
 // ---------- Navigation & actions ----------
 function bindNav() {
   document.querySelectorAll('[data-nav]').forEach(btn => {
@@ -48,7 +75,7 @@ function bindActions() {
   const byId = id => document.getElementById(id);
 
   byId('btn-search')?.addEventListener('click', searchFood);
-  byId('btn-search-add')?.addEventListener('click', searchForAdd);
+  byId('addFoodInput')?.addEventListener('input', searchForAdd);
   byId('btn-clear')?.addEventListener('click', clearMeal);
   byId('btn-calc')?.addEventListener('click', calculateMealScore);
 
@@ -83,9 +110,10 @@ async function loadFoodData(url) {
     if (!foodData.length) throw new Error('Parsed 0 rows');
   } catch (e) {
     console.error(e);
-    alert(
+    showToast(
         `Error loading food data: ${e.message}\n\n` +
-        `Make sure you're serving from a local server and the CSV exists at ${url}`
+        `Make sure you're serving from a local server and the CSV exists at ${url}`,
+        'error'
     );
   }
 }
@@ -115,9 +143,9 @@ function parseCSV(text) {
 
 // ---------- Search (view-only) ----------
 function searchFood() {
-  if (!isDataLoaded) return alert('Please wait for data to finish loading...');
+  if (!isDataLoaded) return showToast('Please wait for data to finish loading...', 'warning');
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (!q) return alert('Please enter a search term');
+  if (!q) return showToast('Please enter a search term', 'warning');
 
   const results = [];
   for (const f of foodData) {
@@ -151,28 +179,34 @@ function renderFoodCard(food) {
 
 // ---------- Add flow ----------
 function searchForAdd() {
-  if (!isDataLoaded) return alert('Please wait for data to finish loading...');
+  if (!isDataLoaded) return;
   const q = document.getElementById('addFoodInput').value.trim().toLowerCase();
-  if (!q) return alert('Please enter a food name');
+  const div = document.getElementById('addFoodResults');
+
+  if (!q) {
+    div.innerHTML = '';
+    currentSearchResults = [];
+    return;
+  }
 
   const results = [];
   for (const f of foodData) {
-    if (f.name.toLowerCase().includes(q)) {
+    if (f.name.toLowerCase().startsWith(q)) {
       results.push(f);
       if (results.length >= 30) break;
     }
   }
   currentSearchResults = results;
 
-  const div = document.getElementById('addFoodResults');
   if (!results.length) {
     div.innerHTML = '<p>No foods found.</p>';
     return;
   }
 
-  // No inline onclick; use data-add-index for delegated handler
+  const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>`;
+
   div.innerHTML = `
-    <h4>Select a food to add:</h4>
+    <h4>Suggestions:</h4>
     ${results.map((food, i) => `
       <div class="food-card">
         <h4>${food.name}</h4>
@@ -187,6 +221,7 @@ function searchForAdd() {
         <button type="button"
                 class="add-food-btn btn btn-success"
                 data-add-index="${i}">
+          ${plusIcon}
           Add to Meal
         </button>
       </div>
@@ -203,42 +238,49 @@ function addFoodToMeal(index) {
 
   mealItems.push({
     name: food.name,
-    kcal: food.kcal * m,
-    protein: food.protein * m,
-    fat: food.fat * m,
-    carbs: food.carbs * m,
-    sugar: food.sugar * m,
-    fiber: food.fiber * m,
-    satfat: food.satfat * m,
-    sodium: food.sodium * m,
+    kcal: (food.kcal || 0) * m,
+    protein: (food.protein || 0) * m,
+    fat: (food.fat || 0) * m,
+    carbs: (food.carbs || 0) * m,
+    sugar: (food.sugar || 0) * m,
+    fiber: (food.fiber || 0) * m,
+    satfat: (food.satfat || 0) * m,
+    sodium: (food.sodium || 0) * m,
     servingSize: grams
   });
 
   updateMealCount();
-  alert(`Added ${food.name} (${grams}g) to your meal!`);
+  showToast(`Added ${food.name} (${grams}g)`, 'success');
+
+  document.getElementById('addFoodInput').value = '';
+  document.getElementById('addFoodResults').innerHTML = '';
+  currentSearchResults = [];
 }
 
 // ---------- Score screen ----------
 function calculateMealScore() {
-  if (!mealItems.length) return alert('Please add some foods first!');
+  if (!mealItems.length) return showToast('Please add some foods first!', 'warning');
 
-  // Totals
   const total = { kcal:0, protein:0, fat:0, carbs:0, sugar:0, fiber:0, satfat:0, sodium:0 };
-  for (const f of mealItems) for (const k in total) total[k] += f[k];
+  for (const f of mealItems) {
+    for (const k in total) {
+      total[k] += f[k] || 0;
+    }
+  }
 
-  // Meal contents list
+  const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>`;
+
   const list = document.getElementById('mealItems');
   list.innerHTML = `
     <h4>Meal Contents:</h4>
     ${mealItems.map((f, i) => `
       <div class="meal-item">
         <span class="meal-item-name">${f.name} (${f.servingSize}g)</span>
-        <button class="meal-item-remove btn btn-secondary" data-remove-index="${i}">Remove</button>
+        <button class="meal-item-remove btn btn-secondary btn-icon" data-remove-index="${i}">${trashIcon}</button>
       </div>
     `).join('')}
   `;
 
-  // Score circle
   const score = scoreOf(total);
   const circle = document.getElementById('scoreCircle');
   const value  = document.getElementById('scoreValue');
@@ -246,7 +288,6 @@ function calculateMealScore() {
   circle.style.background = score >= 7 ? '#16a34a' : score >= 4 ? '#facc15' : '#dc2626';
   circle.style.color      = score >= 4 && score < 7 ? '#111' : '#fff';
 
-  // Nutrition breakdown
   document.getElementById('nutritionPanel').innerHTML = `
     <h4>Macronutrients</h4>
     <div class="macronutrients">
@@ -262,7 +303,6 @@ function calculateMealScore() {
     </div>
   `;
 
-  // Feedback
   document.getElementById('scoreFeedback').innerHTML = `
     <h4>Here's why this is your score:</h4>
     <p>${feedbackOf(score)}</p>
@@ -290,11 +330,11 @@ function removeMealItem(index) {
 }
 
 function clearMeal() {
-  if (!mealItems.length) return alert('Meal is already empty!');
+  if (!mealItems.length) return showToast('Meal is already empty!', 'warning');
   if (confirm('Clear your meal?')) {
     mealItems = [];
     updateMealCount();
-    alert('Meal cleared!');
+    showToast('Meal cleared!', 'success');
   }
 }
 
@@ -303,25 +343,25 @@ function displayStatistics() {
   const total = foodData.length || 0;
 
   document.getElementById('hashMapStats').innerHTML = `
-    <h3>HashMap Statistics</h3>
+    <h3>HashMap (Simulation)</h3>
     <div class="stat-item"><span class="stat-label">Total Items:</span><span class="stat-value">${total}</span></div>
-    <div class="stat-item"><span class="stat-label">Build Time:</span><span class="stat-value">~70ms</span></div>
-    <div class="stat-item"><span class="stat-label">Structure:</span><span class="stat-value">Chaining</span></div>
+    <div class="stat-item"><span class="stat-label">C++ Build Time:</span><span class="stat-value">~70ms</span></div>
+    <div class="stat-item"><span class="stat-label">Web Search:</span><span class="stat-value">.includes()</span></div>
   `;
 
   document.getElementById('trieStats').innerHTML = `
-    <h3>Trie Statistics</h3>
+    <h3>Trie (Simulation)</h3>
     <div class="stat-item"><span class="stat-label">Total Items:</span><span class="stat-value">${total}</span></div>
-    <div class="stat-item"><span class="stat-label">Build Time:</span><span class="stat-value">~294ms</span></div>
-    <div class="stat-item"><span class="stat-label">Structure:</span><span class="stat-value">Prefix Tree</span></div>
+    <div class="stat-item"><span class="stat-label">C++ Build Time:</span><span class="stat-value">~294ms</span></div>
+    <div class="stat-item"><span class="stat-label">Web Search:</span><span class="stat-value">.startsWith()</span></div>
   `;
 
   document.getElementById('perfStats').innerHTML = `
     <h3>Performance Comparison</h3>
-    <p><strong>HashMap:</strong> Best for exact or substring (“contains”) searches.</p>
-    <p><strong>Trie:</strong> Best for prefix/autocomplete searches.</p>
+    <p><strong>HashMap (Search Screen):</strong> Simulates an 'includes' search. Fast in C++, but slow in JS.</p>
+    <p><strong>Trie (Add Screen):</strong> Simulates a 'startsWith' search. Notice the UI lag on each keystroke? This is the problem our C++ Trie solves!</p>
     <p style="margin-top:8px;font-size:.9em;color:#666;">
-      Try the Search vs Add screens to see the practical difference.
+      Your C++ console app proves the microsecond-level speed of these data structures.
     </p>
   `;
 }
