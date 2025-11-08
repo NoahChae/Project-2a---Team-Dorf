@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meal Quality Scorer</title>
+  <!-- Keep your blue/grey theme in styles.css -->
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <header>
+    <h1>MEAL QUALITY SCORER</h1>
+    <p class="subtitle">created by: Noah Chae, Emmett Bradford, Josh Hoeckendorf</p>
+  </header>
+
+  <!-- MAIN MENU -->
+  <section id="menuScreen" class="screen active">
+    <div class="menu-buttons">
+      <button class="btn btn-primary" data-nav="searchScreen">Search</button>
+      <button class="btn btn-primary" data-nav="addFoodScreen">Add</button>
+      <button id="btn-calc" class="btn btn-success">Calculate</button>
+      <button id="btn-clear" class="btn btn-warning">Clear</button>
+      <button class="btn btn-info" data-nav="statsScreen">Statistics</button>
+    </div>
+
+    <div class="meal-counter">
+      <p>Current meal items: <span id="mealCount">0</span></p>
+    </div>
+  </section>
+
+  <!-- SEARCH SCREEN -->
+  <section id="searchScreen" class="screen">
+    <h2>Search Foods</h2>
+
+    <div class="form-group">
+      <label for="searchInput">Search term</label>
+      <input id="searchInput" type="text" placeholder="e.g., bread, yogurt, chicken…"/>
+    </div>
+
+    <div>
+      <button id="btn-search" class="btn btn-primary">Search</button>
+      <button class="btn btn-secondary" data-nav="menuScreen">Back</button>
+    </div>
+
+    <div id="searchResults" class="results-container" style="margin-top: 20px;"></div>
+  </section>
+
+  <!-- ADD FOOD SCREEN -->
+  <section id="addFoodScreen" class="screen">
+    <h2>Add Food to Meal</h2>
+
+    <div class="form-group">
+      <label for="addFoodInput">Food name</label>
+      <input id="addFoodInput" type="text" placeholder="e.g., bread, yogurt, chicken…"/>
+    </div>
+
+    <div>
+      <button id="btn-search-add" class="btn btn-primary">Search</button>
+      <button class="btn btn-secondary" data-nav="menuScreen">Back</button>
+    </div>
+
+    <div id="addFoodResults" class="results-container" style="margin-top: 20px;"></div>
+  </section>
+
+  <!-- SCORE SCREEN -->
+  <section id="scoreScreen" class="screen">
+    <h2>Your Meal Score</h2>
+
+    <div class="score-display">
+      <h3>Total score</h3>
+      <div id="scoreCircle" class="score-circle"><span id="scoreValue">0</span></div>
+    </div>
+
+    <div id="mealItems" class="meal-items-list"></div>
+
+    <div id="nutritionPanel" class="nutrition-panel"></div>
+
+    <div id="scoreFeedback" class="feedback"></div>
+
+    <div style="margin-top: 20px;">
+      <button class="btn btn-secondary" data-nav="menuScreen">Back</button>
+    </div>
+  </section>
+
+  <!-- STATISTICS SCREEN -->
+  <section id="statsScreen" class="screen">
+    <h2>Data Structure Statistics</h2>
+
+    <div class="stats-container" style="margin-top: 20px;">
+      <div id="hashMapStats" class="stat-card"></div>
+      <div id="trieStats" class="stat-card"></div>
+      <div id="perfStats" class="stat-card"></div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <button class="btn btn-secondary" data-nav="menuScreen">Back to Menu</button>
+    </div>
+  </section>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingIndicator" class="loading-indicator">
+  <div class="spinner"></div>
+  <p>Loading data…</p>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

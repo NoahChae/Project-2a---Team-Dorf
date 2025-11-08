@@ -1,9 +1,10 @@
 # ninja log v6
-816	888	1762624264395261170	MealQualityScorerGUI	f66b19fe2fe02bbc
-9	816	1762624263587991864	CMakeFiles/MealQualityScorerGUI.dir/gui_main.cpp.o	205d0eec55ec3d61
-9	447	1762623441441919015	CMakeFiles/MealQualityScorerGUI.dir/MealCore.cpp.o	1ae5e3a1ee24a37b
-3	104	1762624775389137450	build.ninja	3f71ff0df8e7bb9b
-3	104	1762624775389137450	/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug/cmake_install.cmake	3f71ff0df8e7bb9b
+3	104	1762625971588072369	/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug/cmake_install.cmake	3f71ff0df8e7bb9b
+3	104	1762625971589572908	build.ninja	3f71ff0df8e7bb9b
 9	590	1762624775403978433	CMakeFiles/MealQualityScorerGUI.dir/MealCore.cpp.o	3e1f122708e1d4f1
 14	1152	1762624913324635545	CMakeFiles/MealQualityScorerGUI.dir/gui_main.cpp.o	a7561ca222a4dce
 1152	1301	1762624914462582104	MealQualityScorerGUI	3c7d7527a7627dd0
+3	569	1762625971589572908	build.ninja	3f71ff0df8e7bb9b
+3	569	1762625971589572908	/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug/cmake_install.cmake	3f71ff0df8e7bb9b
+1	644	1762625979476993789	CMakeFiles/MealQualityScorer.dir/main.cpp.o	1ac45912885ac6ec
+644	703	1762625980119872479	MealQualityScorer	a083c4cb529a9ac5
