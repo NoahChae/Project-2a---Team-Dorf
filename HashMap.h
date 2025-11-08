@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cctype>
 #include "Food.h"
+#include <iostream>
 
 class HashMap {
     static const int TABLE_SIZE = 100000;

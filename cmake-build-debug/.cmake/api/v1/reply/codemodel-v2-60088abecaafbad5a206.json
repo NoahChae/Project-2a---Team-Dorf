@@ -1,0 +1,69 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "MealQualityScorer",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "MealQualityScorer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-MealQualityScorer-Debug-8351c98c58126561a613.json",
+					"name" : "MealQualityScorer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "MealQualityScorerGUI::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-MealQualityScorerGUI-Debug-759d44c97d5524bd3d9c.json",
+					"name" : "MealQualityScorerGUI",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug",
+		"source" : "/Users/noahchae/Downloads/MealQualityScorer"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 8
+	}
+}

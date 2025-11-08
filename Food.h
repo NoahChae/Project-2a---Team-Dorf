@@ -1,8 +1,9 @@
 #ifndef FOOD_H
 #define FOOD_H
+#include <iostream>
+#include <iomanip>
 
 #include <string>
-#include <iomanip>
 #include <sstream>
 
 struct Food {

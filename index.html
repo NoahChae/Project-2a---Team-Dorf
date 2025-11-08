@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Quality Scorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>MEAL QUALITY SCORER</h1>
+            <p class="subtitle">created by: Noah Chae, Emmett Bradford, Josh Hoeckendorf</p>
+        </header>
+
+        <!-- Main Menu -->
+        <div id="mainMenu" class="screen active">
+            <div class="menu-buttons">
+                <button class="btn btn-primary" onclick="showScreen('searchScreen')">
+                    🔍 Search for Food
+                </button>
+                <button class="btn btn-primary" onclick="showScreen('addFoodScreen')">
+                    ➕ Add Food to Meal
+                </button>
+                <button class="btn btn-success" onclick="calculateMealScore()">
+                    📊 Calculate Meal Score
+                </button>
+                <button class="btn btn-warning" onclick="clearMeal()">
+                    🗑️ Clear Meal
+                </button>
+                <button class="btn btn-info" onclick="showScreen('statsScreen')">
+                    📈 View Statistics
+                </button>
+            </div>
+            <div class="meal-counter">
+                <p>Current meal items: <span id="mealCount">0</span></p>
+            </div>
+        </div>
+
+        <!-- Search Screen -->
+        <div id="searchScreen" class="screen">
+            <h2>Search for Food Items</h2>
+            
+            <div class="form-group">
+                <label>Search Term:</label>
+                <input type="text" id="searchInput" placeholder="e.g., pizza, milk, chicken">
+            </div>
+
+            <div class="form-group">
+                <label>Search Type:</label>
+                <select id="searchType">
+                    <option value="contains">Contains</option>
+                    <option value="prefix">Starts with (Prefix)</option>
+                    <option value="exact">Exact Match</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Data Structure:</label>
+                <select id="dataStructure">
+                    <option value="both">Compare Both</option>
+                    <option value="hashmap">HashMap Only</option>
+                    <option value="trie">Trie Only</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="searchFood()">Search</button>
+            <button class="btn btn-secondary" onclick="showScreen('mainMenu')">Back</button>
+
+            <div id="searchResults" class="results-container"></div>
+        </div>
+
+        <!-- Add Food Screen -->
+        <div id="addFoodScreen" class="screen">
+            <h2>Add Food to Your Meal</h2>
+            
+            <div class="form-group">
+                <label>Food Name:</label>
+                <input type="text" id="addFoodInput" placeholder="Search for a food item">
+            </div>
+
+            <button class="btn btn-primary" onclick="searchForAdd()">Search</button>
+
+            <div id="addFoodResults" class="results-container"></div>
+
+            <button class="btn btn-secondary" onclick="showScreen('mainMenu')">Back to Menu</button>
+        </div>
+
+        <!-- Score Screen -->
+        <div id="scoreScreen" class="screen">
+            <h2>Your Meal Score</h2>
+            
+            <div id="mealItems" class="meal-items-list"></div>
+
+            <div class="score-display">
+                <h3>Your meal score is...</h3>
+                <div class="score-circle" id="scoreCircle">
+                    <span id="scoreValue">-</span>
+                </div>
+            </div>
+
+            <div class="nutrition-panel" id="nutritionPanel"></div>
+
+            <div class="feedback" id="scoreFeedback"></div>
+
+            <button class="btn btn-secondary" onclick="showScreen('mainMenu')">Back to Menu</button>
+        </div>
+
+        <!-- Statistics Screen -->
+        <div id="statsScreen" class="screen">
+            <h2>Data Structure Statistics</h2>
+            
+            <div class="stats-container" id="statsContainer">
+                <div class="stat-card">
+                    <h3>HashMap Statistics</h3>
+                    <div id="hashMapStats"></div>
+                </div>
+                <div class="stat-card">
+                    <h3>Trie Statistics</h3>
+                    <div id="trieStats"></div>
+                </div>
+                <div class="stat-card">
+                    <h3>Performance Comparison</h3>
+                    <div id="perfStats"></div>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="showScreen('mainMenu')">Back to Menu</button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

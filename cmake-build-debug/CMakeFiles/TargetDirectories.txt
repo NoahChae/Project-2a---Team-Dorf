@@ -1,0 +1,4 @@
+/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug/CMakeFiles/MealQualityScorer.dir
+/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug/CMakeFiles/MealQualityScorerGUI.dir
+/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/noahchae/Downloads/MealQualityScorer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
