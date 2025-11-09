@@ -3,13 +3,14 @@ let foodData = [];
 let mealItems = [];
 let currentSearchResults = [];
 let isDataLoaded = false;
-let toastTimeout = null;
+let currentMealForSave = null;
 
 // ---------- Bootstrap ----------
 window.addEventListener('DOMContentLoaded', async () => {
-  createToastContainer();
   bindNav();
   bindActions();
+  bindHistoryActions();
+  loadHistory();
   showLoading(true);
   await loadFoodData('data/nutrition_100k_branded.csv');
   isDataLoaded = true;
@@ -28,9 +29,11 @@ function showScreen(id) {
   const target = document.getElementById(id);
   if (target) target.classList.add('active');
 
-  // Populate statistics when entering the stats screen
   if (id === 'statsScreen') {
     displayStatistics();
+  }
+  if (id === 'historyScreen') {
+    displayHistory();
   }
 }
 
@@ -39,28 +42,15 @@ function updateMealCount() {
   if (el) el.textContent = mealItems.length;
 }
 
-function createToastContainer() {
-  let toast = document.getElementById('toast-notification');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'toast-notification';
-    toast.className = 'toast-notification';
-    document.body.appendChild(toast);
-  }
-}
-
 function showToast(message, type = 'success') {
-  const toast = document.getElementById('toast-notification');
-  if (!toast) return;
+  const toast = document.getElementById('toast');
+  const msg = document.getElementById('toastMessage');
+  if (!toast || !msg) return;
 
-  toast.textContent = message;
-  toast.className = 'toast-notification';
-  toast.classList.add(type);
-  toast.classList.add('show');
-
-  if (toastTimeout) clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => {
-    toast.classList.remove('show');
+  msg.textContent = message;
+  toast.className = `toast show ${type}`;
+  setTimeout(() => {
+    toast.className = 'toast';
   }, 3000);
 }
 
@@ -75,11 +65,12 @@ function bindActions() {
   const byId = id => document.getElementById(id);
 
   byId('btn-search')?.addEventListener('click', searchFood);
+  // Autocomplete: Listen to 'input' on the Add Food screen
   byId('addFoodInput')?.addEventListener('input', searchForAdd);
   byId('btn-clear')?.addEventListener('click', clearMeal);
   byId('btn-calc')?.addEventListener('click', calculateMealScore);
+  byId('btn-save-meal')?.addEventListener('click', saveMeal);
 
-  // Global event delegation for dynamically created Add buttons
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-add-index]');
     if (!btn) return;
@@ -88,7 +79,6 @@ function bindActions() {
     if (Number.isInteger(idx)) addFoodToMeal(idx);
   });
 
-  // Event delegation for Remove buttons on the score screen
   const mealList = byId('mealItems');
   if (mealList) {
     mealList.addEventListener('click', (e) => {
@@ -111,18 +101,15 @@ async function loadFoodData(url) {
   } catch (e) {
     console.error(e);
     showToast(
-        `Error loading food data: ${e.message}\n\n` +
-        `Make sure you're serving from a local server and the CSV exists at ${url}`,
-        'error'
+        `Error loading food data: ${e.message}`, 'error'
     );
   }
 }
 
-// Minimal CSV parser (assumes no quoted commas)
 function parseCSV(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const out = [];
-  for (let i = 1; i < lines.length; i++) { // skip header
+  for (let i = 1; i < lines.length; i++) {
     const p = lines[i].split(',');
     if (p.length >= 9) {
       out.push({
@@ -143,15 +130,16 @@ function parseCSV(text) {
 
 // ---------- Search (view-only) ----------
 function searchFood() {
-  if (!isDataLoaded) return showToast('Please wait for data to finish loading...', 'warning');
+  if (!isDataLoaded) return showToast('Please wait for data to finish loading...', 'error');
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (!q) return showToast('Please enter a search term', 'warning');
+  if (!q) return showToast('Please enter a search term', 'error');
 
   const results = [];
   for (const f of foodData) {
+    // HashMap simulation: .includes()
     if (f.name.toLowerCase().includes(q)) {
       results.push(f);
-      if (results.length >= 50) break; // keep UI fast
+      if (results.length >= 50) break;
     }
   }
 
@@ -177,12 +165,14 @@ function renderFoodCard(food) {
     </div>`;
 }
 
-// ---------- Add flow ----------
+// ---------- Add flow (Autocomplete) ----------
 function searchForAdd() {
-  if (!isDataLoaded) return;
+  if (!isDataLoaded) return; // Don't search if data isn't ready
+
   const q = document.getElementById('addFoodInput').value.trim().toLowerCase();
   const div = document.getElementById('addFoodResults');
 
+  // If search bar is empty, clear results
   if (!q) {
     div.innerHTML = '';
     currentSearchResults = [];
@@ -191,6 +181,7 @@ function searchForAdd() {
 
   const results = [];
   for (const f of foodData) {
+    // Trie simulation: .startsWith()
     if (f.name.toLowerCase().startsWith(q)) {
       results.push(f);
       if (results.length >= 30) break;
@@ -199,14 +190,12 @@ function searchForAdd() {
   currentSearchResults = results;
 
   if (!results.length) {
-    div.innerHTML = '<p>No foods found.</p>';
+    div.innerHTML = '<p>No foods found starting with that.</p>';
     return;
   }
 
-  const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>`;
-
   div.innerHTML = `
-    <h4>Suggestions:</h4>
+    <h4>Select a food to add:</h4>
     ${results.map((food, i) => `
       <div class="food-card">
         <h4>${food.name}</h4>
@@ -221,7 +210,6 @@ function searchForAdd() {
         <button type="button"
                 class="add-food-btn btn btn-success"
                 data-add-index="${i}">
-          ${plusIcon}
           Add to Meal
         </button>
       </div>
@@ -238,20 +226,21 @@ function addFoodToMeal(index) {
 
   mealItems.push({
     name: food.name,
-    kcal: (food.kcal || 0) * m,
-    protein: (food.protein || 0) * m,
-    fat: (food.fat || 0) * m,
-    carbs: (food.carbs || 0) * m,
-    sugar: (food.sugar || 0) * m,
-    fiber: (food.fiber || 0) * m,
-    satfat: (food.satfat || 0) * m,
-    sodium: (food.sodium || 0) * m,
+    kcal: food.kcal * m,
+    protein: food.protein * m,
+    fat: food.fat * m,
+    carbs: food.carbs * m,
+    sugar: food.sugar * m,
+    fiber: food.fiber * m,
+    satfat: food.satfat * m,
+    sodium: food.sodium * m,
     servingSize: grams
   });
 
   updateMealCount();
-  showToast(`Added ${food.name} (${grams}g)`, 'success');
+  showToast(`Added ${food.name} (${grams}g) to your meal!`);
 
+  // Clear the search for a clean workflow
   document.getElementById('addFoodInput').value = '';
   document.getElementById('addFoodResults').innerHTML = '';
   currentSearchResults = [];
@@ -259,16 +248,10 @@ function addFoodToMeal(index) {
 
 // ---------- Score screen ----------
 function calculateMealScore() {
-  if (!mealItems.length) return showToast('Please add some foods first!', 'warning');
+  if (!mealItems.length) return showToast('Please add some foods first!', 'error');
 
   const total = { kcal:0, protein:0, fat:0, carbs:0, sugar:0, fiber:0, satfat:0, sodium:0 };
-  for (const f of mealItems) {
-    for (const k in total) {
-      total[k] += f[k] || 0;
-    }
-  }
-
-  const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>`;
+  for (const f of mealItems) for (const k in total) total[k] += f[k];
 
   const list = document.getElementById('mealItems');
   list.innerHTML = `
@@ -276,7 +259,7 @@ function calculateMealScore() {
     ${mealItems.map((f, i) => `
       <div class="meal-item">
         <span class="meal-item-name">${f.name} (${f.servingSize}g)</span>
-        <button class="meal-item-remove btn btn-secondary btn-icon" data-remove-index="${i}">${trashIcon}</button>
+        <button class="meal-item-remove btn btn-secondary" data-remove-index="${i}">Remove</button>
       </div>
     `).join('')}
   `;
@@ -303,10 +286,23 @@ function calculateMealScore() {
     </div>
   `;
 
+  const feedback = feedbackOf(score);
   document.getElementById('scoreFeedback').innerHTML = `
     <h4>Here's why this is your score:</h4>
-    <p>${feedbackOf(score)}</p>
+    <p>${feedback}</p>
   `;
+
+  currentMealForSave = {
+    id: Date.now(),
+    name: '',
+    items: mealItems,
+    total: total,
+    score: score,
+    feedback: feedback
+  };
+
+  document.getElementById('mealNameInput').value = '';
+  document.querySelector('.save-meal-form').style.display = 'block';
 
   showScreen('scoreScreen');
 }
@@ -325,45 +321,143 @@ function removeMealItem(index) {
   mealItems.splice(index, 1);
   updateMealCount();
   if (document.getElementById('scoreScreen')?.classList.contains('active')) {
-    calculateMealScore(); // refresh totals & list
+    if (mealItems.length > 0) {
+      calculateMealScore();
+    } else {
+      showScreen('menuScreen');
+    }
   }
 }
 
 function clearMeal() {
-  if (!mealItems.length) return showToast('Meal is already empty!', 'warning');
-  if (confirm('Clear your meal?')) {
-    mealItems = [];
-    updateMealCount();
-    showToast('Meal cleared!', 'success');
-  }
+  if (!mealItems.length) return showToast('Meal is already empty!', 'error');
+  mealItems = [];
+  currentMealForSave = null;
+  updateMealCount();
+  showToast('Meal cleared!');
+  document.querySelector('.save-meal-form').style.display = 'none';
 }
 
 // ---------- Statistics (educational summary) ----------
 function displayStatistics() {
   const total = foodData.length || 0;
+  const hashTime = total ? '70-90ms' : 'N/A';
+  const trieTime = total ? '250-300ms' : 'N/A';
+
 
   document.getElementById('hashMapStats').innerHTML = `
     <h3>HashMap (Simulation)</h3>
     <div class="stat-item"><span class="stat-label">Total Items:</span><span class="stat-value">${total}</span></div>
-    <div class="stat-item"><span class="stat-label">C++ Build Time:</span><span class="stat-value">~70ms</span></div>
+    <div class="stat-item"><span class="stat-label">C++ Build Time:</span><span class="stat-value">~${hashTime}</span></div>
     <div class="stat-item"><span class="stat-label">Web Search:</span><span class="stat-value">.includes()</span></div>
   `;
 
   document.getElementById('trieStats').innerHTML = `
     <h3>Trie (Simulation)</h3>
     <div class="stat-item"><span class="stat-label">Total Items:</span><span class="stat-value">${total}</span></div>
-    <div class="stat-item"><span class="stat-label">C++ Build Time:</span><span class="stat-value">~294ms</span></div>
+    <div class="stat-item"><span class="stat-label">C++ Build Time:</span><span class="stat-value">~${trieTime}</span></div>
     <div class="stat-item"><span class="stat-label">Web Search:</span><span class="stat-value">.startsWith()</span></div>
   `;
 
   document.getElementById('perfStats').innerHTML = `
     <h3>Performance Comparison</h3>
-    <p><strong>HashMap (Search Screen):</strong> Simulates an 'includes' search. Fast in C++, but slow in JS.</p>
+    <p><strong>HashMap (Search Screen):</strong> Simulates an 'includes' search. Notice it requires a button press?</p>
     <p><strong>Trie (Add Screen):</strong> Simulates a 'startsWith' search. Notice the UI lag on each keystroke? This is the problem our C++ Trie solves!</p>
     <p style="margin-top:8px;font-size:.9em;color:#666;">
-      Your C++ console app proves the microsecond-level speed of these data structures.
+      This app simulates the logic, but our C++ console app proves the *actual* microsecond-level speed.
     </p>
   `;
+}
+
+// ---------- History Functions ----------
+function loadHistory() {
+  const history = JSON.parse(localStorage.getItem('mealHistory') || '[]');
+  return history;
+}
+
+function saveMeal() {
+  if (!currentMealForSave) {
+    return showToast('Please calculate a score first!', 'error');
+  }
+  const nameInput = document.getElementById('mealNameInput');
+  const name = nameInput.value.trim();
+  if (!name) {
+    return showToast('Please enter a name for your meal.', 'error');
+  }
+
+  currentMealForSave.name = name;
+
+  const history = loadHistory();
+  history.unshift(currentMealForSave);
+  localStorage.setItem('mealHistory', JSON.stringify(history));
+
+  showToast(`Meal '${name}' saved!`);
+  nameInput.value = '';
+  document.querySelector('.save-meal-form').style.display = 'none';
+}
+
+function displayHistory() {
+  const history = loadHistory();
+  const list = document.getElementById('historyList');
+  if (!history.length) {
+    list.innerHTML = '<p>No saved meals yet.</p>';
+    return;
+  }
+
+  list.innerHTML = history.map(meal => `
+    <div class="history-item">
+      <div class="history-item-header">
+        <span class="history-item-name">${meal.name}</span>
+        <span class="history-item-score ${meal.score >= 7 ? 'score-high' : meal.score >= 4 ? 'score-medium' : 'score-low'}">
+          ${meal.score}/10
+        </span>
+      </div>
+      <div class="history-item-body">
+        <p>${meal.items.length} items &bull; ${meal.total.kcal.toFixed(0)} kcal</p>
+        <p class="feedback">${meal.feedback}</p>
+      </div>
+      <div class="history-item-actions">
+        <button class="btn btn-success" data-history-load="${meal.id}">Load</button>
+        <button class="btn btn-warning" data-history-delete="${meal.id}">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function bindHistoryActions() {
+  const list = document.getElementById('historyList');
+  list.addEventListener('click', (e) => {
+    const loadBtn = e.target.closest('[data-history-load]');
+    const deleteBtn = e.target.closest('[data-history-delete]');
+
+    if (loadBtn) {
+      const id = Number(loadBtn.dataset.historyLoad);
+      loadMealFromHistory(id);
+    }
+    if (deleteBtn) {
+      const id = Number(deleteBtn.dataset.historyDelete);
+      deleteMealFromHistory(id);
+    }
+  });
+}
+
+function loadMealFromHistory(id) {
+  const history = loadHistory();
+  const meal = history.find(m => m.id === id);
+  if ( meal) {
+    mealItems = meal.items;
+    updateMealCount();
+    showToast(`Loaded meal: ${meal.name}`);
+  }
+}
+
+function deleteMealFromHistory(id) {
+  let history = loadHistory();
+  const mealName = history.find(m => m.id === id)?.name || 'Meal';
+  history = history.filter(m => m.id !== id);
+  localStorage.setItem('mealHistory', JSON.stringify(history));
+  displayHistory();
+  showToast(`${mealName} deleted from history.`);
 }
 
 // ---------- Scoring ----------

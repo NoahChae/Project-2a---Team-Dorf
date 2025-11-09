@@ -2,6 +2,9 @@
 #include <iomanip>
 #include <chrono>
 #include <algorithm>
+#include <vector>
+#include <string>
+#include <limits>
 #include "Food.h"
 #include "HashMap.h"
 #include "Trie.h"
@@ -10,12 +13,22 @@
 using namespace std;
 using namespace chrono;
 
+struct SavedMeal {
+    long long id;
+    string name;
+    int score;
+    string feedback;
+    vector<Food> items;
+    Food total;
+};
+
 class MealQualityScorer {
     HashMap hashMap;
     Trie trie;
     vector<Food> mealItems;
+    vector<SavedMeal> mealHistory;
+    Food mealTotal;
 public:
-    // Load data into both data structures
     void loadData(const string& filename) {
         cout << "\n========================================" << endl;
         cout << "   MEAL QUALITY SCORER - DATA LOADING" << endl;
@@ -27,7 +40,6 @@ public:
             cout << "Error: No data loaded!" << endl;
             return;
         }
-        // Load into HashMap with timing
         cout << "\nLoading into HashMap..." << endl;
         auto start = high_resolution_clock::now();
         for (const auto& food : foods) {
@@ -37,7 +49,6 @@ public:
         auto hashMapTime = duration_cast<milliseconds>(end - start).count();
         cout << "HashMap build time: " << hashMapTime << " ms" << endl;
 
-        // Load into Trie with timing
         cout << "\nLoading into Trie..." << endl;
         start = high_resolution_clock::now();
         for (const auto& food : foods) {
@@ -51,7 +62,6 @@ public:
         cout << "========================================\n" << endl;
     }
 
-    // Display search results
     void displayResults(const vector<Food>& results, int maxDisplay = 10) {
         if (results.empty()) {
             cout << "No results found." << endl;
@@ -74,7 +84,6 @@ public:
         }
     }
 
-    // Search and compare performance
     void searchFood() {
         cout << "\n========================================" << endl;
         cout << "         SEARCH FOR FOOD ITEMS" << endl;
@@ -82,7 +91,7 @@ public:
 
         cout << "Enter search term: ";
         string searchTerm;
-        cin.ignore();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         getline(cin, searchTerm);
 
         if (searchTerm.empty()) {
@@ -102,7 +111,6 @@ public:
         vector<Food> hashMapResults, trieResults;
         auto hashMapTime = 0LL, trieTime = 0LL;
 
-        // HashMap search with timing
         auto start = high_resolution_clock::now();
         if (choice == 1) {
             hashMapResults = hashMap.searchExact(searchTerm);
@@ -114,7 +122,6 @@ public:
         auto end = high_resolution_clock::now();
         hashMapTime = duration_cast<microseconds>(end - start).count();
 
-        // Trie search with timing
         start = high_resolution_clock::now();
         if (choice == 1) {
             trieResults = trie.searchExact(searchTerm);
@@ -126,7 +133,6 @@ public:
         end = high_resolution_clock::now();
         trieTime = duration_cast<microseconds>(end - start).count();
 
-        // Display results
         cout << "\n--- HashMap Results ---" << endl;
         displayResults(hashMapResults);
         cout << "Search time: " << hashMapTime << " microseconds" << endl;
@@ -145,7 +151,6 @@ public:
         }
     }
 
-    // Add food to meal
     void addToMeal() {
         cout << "\n========================================" << endl;
         cout << "         ADD FOOD TO YOUR MEAL" << endl;
@@ -153,7 +158,7 @@ public:
 
         cout << "Enter food name to search: ";
         string searchTerm;
-        cin.ignore();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         getline(cin, searchTerm);
 
         vector<Food> results = hashMap.searchContains(searchTerm);
@@ -186,7 +191,6 @@ public:
 
         if (servingSize <= 0) servingSize = 100;
 
-        // Adjust nutritional values based on serving size
         double multiplier = servingSize / 100.0;
         Food adjustedFood = selectedFood;
         adjustedFood.kcal *= multiplier;
@@ -199,12 +203,12 @@ public:
         adjustedFood.sodium *= multiplier;
 
         mealItems.push_back(adjustedFood);
+        mealTotal.name = "";
 
         cout << "\nAdded to meal: " << selectedFood.name
              << " (" << servingSize << "g)" << endl;
     }
 
-    // Calculate and display meal score
     void calculateMealScore() {
         if (mealItems.empty()) {
             cout << "\nNo items in meal! Add some foods first." << endl;
@@ -215,8 +219,7 @@ public:
         cout << "         YOUR MEAL SCORE" << endl;
         cout << "========================================\n" << endl;
 
-        // Aggregate nutritional values
-        Food mealTotal;
+        mealTotal = Food();
         mealTotal.name = "Your Complete Meal";
 
         for (const auto& food : mealItems) {
@@ -230,16 +233,13 @@ public:
             mealTotal.sodium += food.sodium;
         }
 
-        // Display meal contents
         cout << "Meal Contents:" << endl;
         for (size_t i = 0; i < mealItems.size(); i++) {
             cout << (i + 1) << ". " << mealItems[i].name << endl;
         }
 
-        // Display aggregated nutrition
         mealTotal.display();
 
-        // Calculate and display score
         int score = mealTotal.calculateScore();
         cout << "\n****************************************" << endl;
         cout << "       YOUR MEAL SCORE: " << score << "/10" << endl;
@@ -248,27 +248,116 @@ public:
         cout << "========================================\n" << endl;
     }
 
-    // Clear current meal
     void clearMeal() {
         mealItems.clear();
+        mealTotal = Food();
         cout << "\nMeal cleared!" << endl;
     }
 
-    // Display data structure statistics
+    void saveCurrentMeal() {
+        if (mealItems.empty()) {
+            cout << "\nCannot save an empty meal. Add some items first." << endl;
+            return;
+        }
+        if (mealTotal.name.empty()) {
+            cout << "\nCalculate the score first before saving." << endl;
+            calculateMealScore();
+        }
+
+        cout << "\nEnter a name for this meal: ";
+        string mealName;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        getline(cin, mealName);
+
+        SavedMeal newMeal;
+        newMeal.id = high_resolution_clock::now().time_since_epoch().count();
+        newMeal.name = mealName;
+        newMeal.items = mealItems;
+        newMeal.total = mealTotal;
+        newMeal.score = mealTotal.calculateScore();
+        newMeal.feedback = mealTotal.getFeedback();
+
+        mealHistory.push_back(newMeal);
+        cout << "\nMeal '" << mealName << "' saved!" << endl;
+    }
+
+    void loadMealFromHistory(int index) {
+        if (index < 0 || index >= mealHistory.size()) {
+            cout << "Invalid selection." << endl;
+            return;
+        }
+        mealItems = mealHistory[index].items;
+        mealTotal = mealHistory[index].total;
+        cout << "\nMeal '" << mealHistory[index].name << "' loaded!" << endl;
+    }
+
+    void deleteMealFromHistory(int index) {
+        if (index < 0 || index >= mealHistory.size()) {
+            cout << "Invalid selection." << endl;
+            return;
+        }
+        string deletedName = mealHistory[index].name;
+        mealHistory.erase(mealHistory.begin() + index);
+        cout << "\nMeal '" << deletedName << "' deleted." << endl;
+    }
+
+    void viewMealHistory() {
+        cout << "\n========================================" << endl;
+        cout << "           YOUR SAVED MEALS" << endl;
+        cout << "========================================\n" << endl;
+
+        if (mealHistory.empty()) {
+            cout << "No meals saved yet." << endl;
+            return;
+        }
+
+        for (size_t i = 0; i < mealHistory.size(); ++i) {
+            cout << (i + 1) << ". " << mealHistory[i].name << endl;
+            cout << "   Score: " << mealHistory[i].score << "/10 - " << mealHistory[i].items.size() << " items" << endl;
+        }
+
+        cout << "\n----------------------------------------" << endl;
+        cout << "Select an action:" << endl;
+        cout << "1. Load a meal" << endl;
+        cout << "2. Delete a meal" << endl;
+        cout << "0. Back to Main Menu" << endl;
+        cout << "Choice: ";
+
+        int choice;
+        cin >> choice;
+        int mealIndex;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter meal number to load: ";
+                cin >> mealIndex;
+                loadMealFromHistory(mealIndex - 1);
+                break;
+            case 2:
+                cout << "Enter meal number to delete: ";
+                cin >> mealIndex;
+                deleteMealFromHistory(mealIndex - 1);
+                break;
+            case 0:
+            default:
+                cout << "Returning to main menu." << endl;
+                break;
+        }
+    }
+
     void displayStats() {
         hashMap.printStats();
         trie.printStats();
     }
 
-    // Main menu
     void run() {
         cout << "\n========================================" << endl;
         cout << "   MEAL QUALITY SCORER" << endl;
         cout << "   Created by: Noah Chae, Emmett Bradford, Josh Hoeckendorf" << endl;
         cout << "========================================\n" << endl;
 
-        // Load data
         loadData("../../web/data/nutrition_100k_branded.csv");
+        mealTotal.name = "";
 
         while (true) {
             cout << "\n========================================" << endl;
@@ -278,8 +367,10 @@ public:
             cout << "2. Add food to meal" << endl;
             cout << "3. Calculate meal score" << endl;
             cout << "4. Clear meal" << endl;
-            cout << "5. Display data structure statistics" << endl;
-            cout << "6. Exit" << endl;
+            cout << "5. Save Current Meal" << endl;
+            cout << "6. View Meal History" << endl;
+            cout << "7. Display data structure statistics" << endl;
+            cout << "8. Exit" << endl;
             cout << "========================================" << endl;
             cout << "Current meal items: " << mealItems.size() << endl;
             cout << "\nChoice: ";
@@ -301,13 +392,23 @@ public:
                     clearMeal();
                     break;
                 case 5:
-                    displayStats();
+                    saveCurrentMeal();
                     break;
                 case 6:
+                    viewMealHistory();
+                    break;
+                case 7:
+                    displayStats();
+                    break;
+                case 8:
                     cout << "\nThank you for using Meal Quality Scorer!" << endl;
                     return;
                 default:
                     cout << "\nInvalid choice. Please try again." << endl;
+                    if (cin.fail()) {
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    }
             }
         }
     }

@@ -79,6 +79,27 @@ header h1{font-size:2.2em;margin-bottom:10px;letter-spacing:1px}
 .serving-size-input{display:flex;align-items:center;gap:10px;margin-top:10px}
 .serving-size-input input{width:100px;padding:8px;border:2px solid #d1d5db;border-radius:6px}
 
+/* Meal Item (Score Screen) */
+.meal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.meal-item-name {
+  font-weight: 600;
+  color: #333;
+}
+.meal-item-remove {
+  background: #dc2626;
+}
+.meal-item-remove:hover {
+  background: #b91c1c;
+}
+
 /* Score */
 .score-display{text-align:center;margin:28px 0}
 .score-display h3{color:#555;margin-bottom:12px;font-size:1.2em}
@@ -87,13 +108,45 @@ header h1{font-size:2.2em;margin-bottom:10px;letter-spacing:1px}
   display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(22, 163, 74,.25)
 }
 .score-circle span{font-size:3.6rem;font-weight:800;color:#fff}
+#scoreFeedback p { margin-top: 10px; font-size: 1.05em; }
+
+/* Save Meal Form */
+.save-meal-form {
+  background: #f3f4f6;
+  padding: 24px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+.save-meal-form .form-group {
+  margin-bottom: 10px;
+}
+.save-meal-form label {
+  font-size: 1.2em;
+  color: #166534;
+  text-align: center;
+}
+.save-meal-form input {
+  text-align: center;
+  font-weight: 600;
+}
+.save-meal-form button {
+  width: 100%;
+  margin: 10px 0 0 0;
+}
 
 /* Panels & stats */
 .nutrition-panel{background:#f9fafb;padding:24px;border-radius:12px;margin:22px 0}
 .nutrition-panel h4{color:#166534;margin-bottom:14px;text-align:center}
+.macronutrients, .micronutrients {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
 .nutrient-item{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);padding:14px;text-align:center}
 .nutrient-item .label{font-size:.9em;color:#6b7280;margin-bottom:4px}
 .nutrient-item .value{font-size:1.6em;font-weight:800;color:#16a34a}
+.nutrient-item .value .unit { font-size: 0.5em; font-weight: 600; margin-left: 2px; }
 
 .stats-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
 .stat-card{background:#f9fafb;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
@@ -102,6 +155,55 @@ header h1{font-size:2.2em;margin-bottom:10px;letter-spacing:1px}
 .stat-item:last-child{border-bottom:none}
 .stat-label{color:#6b7280}
 .stat-value{font-weight:700;color:#111827}
+.stat-card p { margin-top: 10px; color: #374151; }
+
+/* History Screen */
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.history-item {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.history-item-info {
+  flex-grow: 1;
+}
+.history-item-info h4 {
+  font-size: 1.1em;
+  color: #111827;
+  margin-bottom: 2px;
+}
+.history-item-info p {
+  font-size: 0.9em;
+  color: #6b7280;
+}
+.history-item-score {
+  font-size: 1.5em;
+  font-weight: 800;
+  color: #16a34a;
+  flex-shrink: 0;
+  margin: 0 10px;
+}
+.history-item-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.btn-delete {
+  background-color: #dc2626;
+  color: white;
+}
+.btn-delete:hover {
+  background-color: #b91c1c;
+}
 
 /* Loading */
 .loading-indicator{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;flex-direction:column}
@@ -125,8 +227,15 @@ header h1{font-size:2.2em;margin-bottom:10px;letter-spacing:1px}
 
 /* Responsive */
 @media (max-width:768px){
+  body { padding: 0; }
+  .container { border-radius: 0; }
   .screen{padding:20px}
   .menu-buttons .btn{padding:16px}
   .score-circle{width:160px;height:160px}
   .score-circle span{font-size:3rem}
+  .macronutrients, .micronutrients { grid-template-columns: 1fr; }
+  .history-item { flex-direction: column; align-items: stretch; }
+  .history-item-score { margin: 10px 0; text-align: center; }
+  .history-item-actions { justify-content: stretch; }
+  .history-item-actions .btn { flex-grow: 1; }
 }
