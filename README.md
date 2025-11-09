@@ -65,8 +65,7 @@ MealQualityScorer/
 
 1. Open the `web/` folder in a terminal  
 2. Start a simple local web server:
-   ```bash
-   python3 -m http.server 8080
+   ```python3 -m http.server 8080
    ```
 3. Visit [http://localhost:8080](http://localhost:8080) in your browser  
 
